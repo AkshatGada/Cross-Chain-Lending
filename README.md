@@ -1,6 +1,6 @@
-# Cross-Chain Lending: Morpho Blue Cross-Chain Collateral Design Pattern ( WIP )
+# Cross-Chain Lending: Morpho Blue Cross-Chain Collateral Design Pattern 
 
-> Note: The core scripts for the cross-chain lending workflows have been completed. Integration with AggSandbox is underway, and we are actively developing the frontends and polishing the full end-to-end workflow. Please see the detailed description below for the complete implementation and usage notes. -->
+> Note: The core scripts for the cross-chain lending workflows have been completed. Integration with AggSandbox is underway, and we are actively developing the frontends and polishing the full end-to-end workflow. Please see the detailed description below for the complete implementation and usage notes. 
 
 ## Overview
 
