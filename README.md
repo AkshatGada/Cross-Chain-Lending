@@ -126,3 +126,174 @@ Tatara Lending Market
 **Market Parameter Structure**:
 
 ```
+MarketParams Configuration
+    │
+    ├── loanToken: AUSD_ADDRESS
+    │   ├── The asset users will borrow
+    │   └── Must be an ERC-20 token
+    │
+    ├── collateralToken: LP_TOKEN_ADDRESS  
+    │   ├── The asset users deposit as collateral
+    │   └── Bridged LP tokens from Sepolia
+    │
+    ├── oracle: LP_ORACLE_ADDRESS
+    │   ├── Price feed for LP token valuation
+    │   └── Returns price in 1e36 scaled format
+    │
+    ├── irm: IRM_ADDRESS
+    │   ├── Interest rate model contract
+    │   └── Calculates borrow/supply rates
+    │
+    └── lltv: 860000000000000000
+        ├── 86% liquidation threshold
+        └── Maximum borrowable amount ratio
+```
+
+### 3.2 Market Creation Process
+
+**Educational Flow**: Markets must be created before they can be used for lending.
+
+**Creation Sequence**:
+1. **Parameter Validation**: Ensure all addresses are valid contracts
+2. **Market Creation**: Call `createMarket()` with parameters
+3. **Liquidity Seeding**: Supply initial AUSD liquidity for borrowers
+4. **Market Activation**: Market becomes available for collateral deposits
+
+***
+
+## 4. Oracle and Price Discovery
+
+### 4.1 Custom Oracle Design
+
+**File**: `scripts/complete-morpho-workflow.js`
+
+**Educational Challenge**: How do you price LP tokens that don't have standard market prices?
+
+**LP Token Pricing Strategy**:
+
+```
+LP Token Price Calculation
+    │
+    ├── 1. Get Underlying Reserves
+    │   ├── Read TokenA balance in pool
+    │   ├── Read TokenB balance in pool
+    │   └── Get current exchange rates
+    │
+    ├── 2. Calculate Total Value
+    │   ├── TokenA_value = reserves_A × price_A
+    │   ├── TokenB_value = reserves_B × price_B  
+    │   └── Total_pool_value = TokenA_value + TokenB_value
+    │
+    └── 3. Compute LP Token Price
+        ├── LP_supply = total LP tokens outstanding
+        ├── Price_per_LP = Total_pool_value / LP_supply
+        └── Return price in 1e36 scaled format
+```
+
+### 4.2 Oracle Interface Compliance
+
+**Morpho Blue Oracle Requirements**:
+- Must implement `price()` function
+- Returns price scaled by 1e36 (not 1e8 like Chainlink)
+- Must handle decimal conversions properly
+- Should include staleness checks for security
+
+***
+
+## 5. Lending Flow Implementation
+
+### 5.1 Complete Lending Workflow
+
+**File**: `scripts/morpho-complete-test.js`
+
+**Purpose**: Orchestrate the full lending cycle from collateral deposit to AUSD borrowing.
+
+**Workflow Stages**:
+
+```
+Lending Cycle Execution
+    │
+    ├── 1. Market Preparation
+    │   ├── Verify market exists or create it
+    │   ├── Ensure sufficient AUSD liquidity
+    │   └── Validate oracle functionality
+    │
+    ├── 2. Collateral Operations
+    │   ├── Approve LP tokens for Morpho
+    │   ├── Call supplyCollateral() with LP amount
+    │   └── Verify collateral is recorded
+    │
+    ├── 3. Borrowing Capacity Calculation
+    │   ├── Get LP token price from oracle
+    │   ├── Calculate collateral value in USD
+    │   ├── Apply LLTV ratio (86%)
+    │   └── Determine safe borrow amount
+    │
+    └── 4. AUSD Borrowing
+        ├── Calculate desired borrow amount
+        ├── Ensure it's below max LTV
+        ├── Execute borrow() transaction
+        └── Verify borrowed AUSD received
+```
+
+### 5.2 Risk Management Integration
+
+**Educational Focus**: Understanding how lending protocols manage risk.
+
+**Risk Parameters**:
+- **LTV Monitoring**: Current borrowed amount vs collateral value
+- **Liquidation Threshold**: Point where position can be liquidated
+- **Safety Buffer**: Recommended borrowing below maximum
+- **Interest Accrual**: Borrowed amount grows over time
+
+***
+
+## 6. File Structure and Responsibilities
+
+### 6.1 Contract Integration Points
+
+| Component | Contract Address | Purpose |
+|-----------|------------------|---------|
+| **MorphoBlue** | `0xC263...b9021` | Main protocol entry point |
+| **AUSD** | `0xa9012a055bd4...` | Loan token for borrowing |
+| **LP Tokens** | Bridged from Sepolia | Collateral tokens |
+| **Oracle** | Custom deployment | LP token price feed |
+
+***
+
+## 7. Key Implementation Patterns
+
+### 7.1 The Bridge-to-Borrow Pattern
+
+**Universal Principle**: Any cross-chain asset can be used as collateral through proper bridging and market setup.
+
+```
+1. BRIDGE COLLATERAL
+   ├── Transfer LP tokens cross-chain
+   ├── Include lending parameters
+   └── Preserve asset properties
+
+2. CREATE MARKET
+   ├── Define loan/collateral pair
+   ├── Set risk parameters
+   └── Deploy custom oracle
+
+3. SUPPLY & BORROW
+   ├── Deposit bridged assets as collateral
+   ├── Calculate borrowing capacity
+   └── Execute AUSD borrowing
+```
+
+### 7.2 The Isolated Risk Pattern
+
+**Key Insight**: Each market operates independently, allowing for innovative collateral types.
+
+**Isolation Benefits**:
+- Custom risk parameters per asset
+- Experimental collateral types don't affect other markets  
+- Flexible liquidation mechanisms
+- Independent interest rate models
+
+***
+
+This educational walkthrough demonstrates how cross-chain assets can be effectively used as collateral in isolated lending markets, showcasing the composability of DeFi protocols across different blockchains while maintaining proper risk management and price discovery mechanisms. The key insight is that any asset with deterministic value can become collateral through proper oracle integration and market design.
